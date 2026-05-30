@@ -1,0 +1,150 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+
+  // Self-hosted Renovate reads this same file as its global config first
+  // and then again as the per-repo config; without `requireConfig:
+  // "ignored"` that double-read is logged as a warning every run.
+  requireConfig: "ignored",
+
+  extends: [
+    "config:recommended",
+    // DCO sign-off on every commit Renovate creates. Pairs with
+    // `gitAuthor` below so the trailer matches the committer identity.
+    ":gitSignOff",
+    // Default GitHub Actions to pin-by-digest with a human-readable tag
+    // comment — same discipline AGENTS.md mandates for every `uses:`.
+    "helpers:pinGitHubActionDigests",
+    // Enable Renovate's built-in pre-commit manager (off by default) so it
+    // tracks the hook `rev:` pins in `.pre-commit-config.yaml`, the same way
+    // the built-in manager tracks the GitHub Actions pins.
+    ":enablePreCommit",
+  ],
+
+  // Authenticated identity. `username` is what GitHub recognizes as the
+  // App's bot login; `gitAuthor` is what shows up in `git log` and in the
+  // DCO `Signed-off-by:` trailer.
+  //
+  // The numeric prefix on the gitAuthor email is the proofhouse-renovate
+  // bot account's own user id (distinct from the App id), recovered with
+  // `gh query users/proofhouse-renovate[bot] --jq .id`. gitSignOff needs a
+  // valid noreply address here to construct the Signed-off-by line.
+  username: "proofhouse-renovate[bot]",
+  gitAuthor: "proofhouse-renovate[bot] <289255489+proofhouse-renovate[bot]@users.noreply.github.com>",
+
+  // Single-repo scope. Self-hosted Renovate iterates over this list and
+  // bails out on anything not present, so a misconfigured install can't
+  // accidentally open PRs on other repositories.
+  repositories: ["proofhouse/pre-commit-hooks"],
+
+  // Renovate's default rate limits assume a hosted SaaS context. For a
+  // self-hosted run on a cron we want every actionable PR opened on each
+  // pass; rate-limiting just stretches updates across multiple runs.
+  prConcurrentLimit: 0,
+  prHourlyLimit: 0,
+
+  // Open and update PRs on Sundays only. Keeps weekday review queues
+  // focused on human-authored work; pairs with the weekday cron in
+  // renovate.yaml which still runs for vulnerability alerts (those
+  // bypass the schedule).
+  schedule: ["on sunday"],
+
+  // Surface known CVEs in the dependency tree as PRs immediately, no
+  // cooldown and no schedule gate.
+  vulnerabilityAlerts: {
+    enabled: true,
+    minimumReleaseAge: null,
+  },
+
+  packageRules: [
+    // Cooldown window — skip versions younger than 5 days. Most
+    // supply-chain attacks get noticed and yanked inside that window.
+    // Vulnerability-driven updates bypass via vulnerabilityAlerts above.
+    {
+      matchUpdateTypes: ["major", "minor", "patch"],
+      minimumReleaseAge: "5 days",
+    },
+
+    // One review surface for every GitHub Actions pin refresh.
+    {
+      groupName: "github-actions",
+      matchManagers: ["github-actions"],
+    },
+
+    // One review surface for every pre-commit hook `rev:` bump.
+    {
+      groupName: "pre-commit-hooks",
+      matchManagers: ["pre-commit"],
+    },
+  ],
+
+  // Renovate has built-in managers for GitHub Actions and Dockerfile FROM
+  // lines — those don't need customManagers. The `# renovate:` markers in
+  // non-standard locations do.
+  customManagers: [
+    // Justfile: the digest-pinned Docker images (actionlint, shellcheck,
+    // bats, gitleaks). Each marker pairs a tag-form version with a
+    // tag@sha256:digest image string on the following two lines, and
+    // Renovate updates both atomically (the tag appears on both lines and
+    // autoReplaceGlobalMatch defaults to true). The matchStrings pattern
+    // matches each marker block independently, so one entry covers all of
+    // them.
+    //
+    //   # renovate: datasource=docker depName=rhysd/actionlint
+    //   actionlint_version := "1.7.12"
+    //   actionlint_image := "docker.io/rhysd/actionlint:1.7.12@sha256:..."
+    {
+      customType: "regex",
+      managerFilePatterns: ["/^Justfile$/"],
+      matchStrings: [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+\\S+_version := \"(?<currentValue>.*?)\"\\s+\\S+_image := \".*?@(?<currentDigest>sha256:[a-f0-9]+)\"",
+      ],
+    },
+
+    // .github/actions/*/action.yml. The composite actions (setup-just,
+    // setup-shfmt) carry the marker inline after the input default, so
+    // the regex reads the value first and the marker second.
+    //
+    //   default: '1.51.0'  # renovate: datasource=github-releases depName=casey/just
+    {
+      customType: "regex",
+      managerFilePatterns: [
+        "/^\\.github/actions/[^/]+/action\\.ya?ml$/",
+      ],
+      matchStrings: [
+        "default: '(?<currentValue>.*?)'\\s+# renovate: datasource=(?<datasource>.*?) depName=(?<depName>\\S+)",
+      ],
+    },
+
+    // .github/workflows/renovate-config-validator.yaml. Pins the
+    // Renovate engine image used by the validator. Matches the
+    // RENOVATE_IMAGE=... shell assignment.
+    //
+    //   # renovate: datasource=docker depName=ghcr.io/renovatebot/renovate
+    //   RENOVATE_IMAGE="ghcr.io/renovatebot/renovate:43.205.0@sha256:..."
+    {
+      customType: "regex",
+      managerFilePatterns: [
+        "/^\\.github/workflows/[^/]+\\.ya?ml$/",
+      ],
+      matchStrings: [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+RENOVATE_IMAGE=\"[^:]+:(?<currentValue>[^@]+)@(?<currentDigest>sha256:[a-f0-9]+)\"",
+      ],
+    },
+
+    // .github/workflows/renovate.yaml. Pins the Renovate engine version
+    // the self-hosted action downloads at runtime. No digest — the
+    // github-action input is a release tag, not a container ref.
+    //
+    //   # renovate: datasource=github-releases depName=renovatebot/renovate
+    //   renovate-version: 43.205.0
+    {
+      customType: "regex",
+      managerFilePatterns: [
+        "/^\\.github/workflows/renovate\\.yaml$/",
+      ],
+      matchStrings: [
+        "# renovate: datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\s+renovate-version:\\s+(?<currentValue>\\S+)",
+      ],
+    },
+  ],
+}

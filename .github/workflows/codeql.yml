@@ -1,0 +1,64 @@
+---
+# CodeQL static analysis for the GitHub Actions workflows themselves.
+# CodeQL has no analyzer for shell scripts, so this repo's hook code
+# (bash under scripts/) is covered by shellcheck rather than CodeQL;
+# the `actions` pack still catches workflow-level issues such as script
+# injection through untrusted `${{ }}` interpolation and unpinned
+# action references. Runs on every pull request, every push to `main`,
+# and weekly so the analysis re-evaluates `main` against newly
+# published query updates even when nothing in the tree changed.
+# Results upload to the repository's code-scanning dashboard as SARIF.
+#
+# The `actions` language scans the workflow files with no build step
+# and runs the `security-extended` query suite.
+
+name: codeql
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    # Weekly, Sunday 03:27 UTC. Off-peak and off the top of the hour
+    # so the run avoids the busiest scheduler slots.
+    - cron: "27 3 * * 0"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  analyze:
+    name: "analyze (actions)"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+      actions: read
+      packages: read
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v4.31.4
+        with:
+          languages: actions
+          build-mode: none
+          queries: security-extended
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@4e94bd11f71e507f7f87df81788dff88d1dacbfb # v4.31.4
+        with:
+          category: "/language:actions"

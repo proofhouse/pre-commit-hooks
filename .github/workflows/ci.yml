@@ -1,0 +1,65 @@
+---
+# Main quality gate. The lint job runs shellcheck (pinned Docker image),
+# shfmt (installed by the setup-shfmt composite), and actionlint (pinned
+# Docker image) through `just lint`; the test job runs the bats suites
+# from the pinned bats Docker image through `just test`. The recipe stays
+# the single definition of what each gate runs. The prose, spelling,
+# Markdown, config, and YAML linters run locally via prek, not in CI.
+
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up just
+        uses: ./.github/actions/setup-just
+
+      - name: Set up shfmt
+        uses: ./.github/actions/setup-shfmt
+
+      - name: Lint
+        run: just lint
+
+  test:
+    name: test
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up just
+        uses: ./.github/actions/setup-just
+
+      - name: Test
+        run: just test

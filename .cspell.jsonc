@@ -1,0 +1,21 @@
+{
+  "language": "en",
+  "ignorePaths": [
+    "**/*.d.ts",
+    "**/*.log",
+    ".claude/worktrees/**/*",
+    ".rumdl_cache/**/*",
+    ".vale/**/*",
+    "LICENSE",
+    "node_modules/**/*",
+    "tmp/**/*"
+  ],
+  "dictionaryDefinitions": [
+    {
+      "name": "pre-commit-hooks",
+      "path": "./.cspell-words.txt",
+      "addWords": true
+    }
+  ],
+  "dictionaries": ["pre-commit-hooks"]
+}
