@@ -37,6 +37,10 @@ repos:
       # with a strip-and-vale pipeline.
       - id: vale
         types_or: [markdown]
+        # The generated CHANGELOG.md carries cog's Title-Case section
+        # headings (Features, Continuous Integration), which the prose
+        # rules flag. `just lint-prose` already globs it out; match that.
+        exclude: ^CHANGELOG\.md$
 
   - repo: https://github.com/rvben/rumdl-pre-commit
     rev: 9f07a8f89dc360f6db3cc0ad9c1953148e9f706f  # frozen: v0.1.44
