@@ -187,16 +187,21 @@ prek-all:
 prek-install:
     prek install -t commit-msg -t pre-commit -t pre-push
 
-# Generate CHANGELOG.md from Conventional Commit history via cog.
+# Generate CHANGELOG.md from Conventional Commit history via cog. Lint the
+# file in place so the CHANGELOG.md per-file-ignores in .rumdl.toml apply
+# (rumdl matches those globs against on-disk paths, not stdin).
 generate-changelog:
-    cog changelog | { echo "# Changelog"; cat; } | rumdl check -d MD024 --fix --stdin > CHANGELOG.md
+    cog changelog | { echo "# Changelog"; cat; } > CHANGELOG.md
+    rumdl check --fix CHANGELOG.md
 
 # Preview the changelog entries since the last tagged release.
 preview-changelog:
     cog changelog --at $(git describe --tags)..HEAD -t full_hash | rumdl check -d MD041 --fix --stdin
 
-# Generate release notes for a version (or HEAD); prints to stdout.
+# Generate release notes for a version (or HEAD); prints to stdout. MD041
+# is disabled for the heading-less fragment; without --isolated, MD013
+# stays off via .rumdl.toml so the full commit hashes are never wrapped.
 [script]
 generate-release-notes version="":
     v=$([[ -n "{{ version }}" ]] && echo "v{{ version }}" || echo "..$(git rev-parse HEAD)")
-    cog changelog --at $v -t full_hash | rumdl check -d MD024,MD041 --isolated --fix --stdin
+    cog changelog --at $v -t full_hash | rumdl check -d MD041 --fix --stdin
