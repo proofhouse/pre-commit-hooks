@@ -100,11 +100,11 @@
       ],
     },
 
-    // .github/actions/*/action.yml. The composite actions (setup-just,
-    // setup-shfmt) carry the marker inline after the input default, so
-    // the regex reads the value first and the marker second.
+    // .github/actions/*/action.yml. The setup-shfmt composite action
+    // carries the marker inline after the input default, so the regex
+    // reads the value first and the marker second.
     //
-    //   default: '1.51.0'  # renovate: datasource=github-releases depName=casey/just
+    //   default: 'v3.13.1'  # renovate: datasource=github-releases depName=mvdan/sh
     {
       customType: "regex",
       managerFilePatterns: [
