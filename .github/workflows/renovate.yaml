@@ -2,8 +2,7 @@
 # Self-hosted Renovate. Authenticates as the proofhouse-renovate[bot]
 # GitHub App so commits carry a DCO sign-off matching the committer (the
 # stock Mend hosted App commits as renovate[bot], which can't match this
-# repo's gitAuthor + gitSignOff pair). Mounts the host docker socket so
-# the gomodTidy post-update step can spin up a sidecar Go container.
+# repo's gitAuthor + gitSignOff pair).
 #
 # End-to-end execution depends on the proofhouse-renovate App being
 # registered and RENOVATE_APP_ID / RENOVATE_PRIVATE_KEY secrets being set;
@@ -64,8 +63,3 @@ jobs:
           renovate-version: 43.205.0
           configurationFile: .github/renovate.json5
           token: ${{ steps.get_token.outputs.token }}
-          # gomodTidy launches a Go sidecar; that requires the Renovate
-          # container to reach the host docker daemon.
-          mount-docker-socket: true
-          docker-user: root
-          docker-cmd-file: .github/actions/renovate/entrypoint.sh
