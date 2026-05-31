@@ -1,0 +1,50 @@
+---
+# Install shfmt from a pinned mvdan/sh release binary. mvdan/sh ships no
+# checksums file with its releases, so the per-arch sha256 is pinned here
+# and verified after download; bump the version default and the checksums
+# together (Renovate tracks the version via the trailing marker, not the
+# sha, so a bump fails the verify until the sha is refreshed). Only the
+# Linux arches are wired up because this action exists for the Linux CI
+# lint job; local runs install shfmt from the Brewfile instead.
+
+name: Setup shfmt
+description: Install shfmt from a pinned mvdan/sh release binary, verified against a pinned sha256.
+
+inputs:
+  shfmt-version:
+    description: shfmt version to install (defaults to the project-wide pinned release).
+    required: false
+    default: 'v3.13.1'  # renovate: datasource=github-releases depName=mvdan/sh
+
+runs:
+  using: composite
+  steps:
+    - name: Install shfmt
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        SHFMT_VERSION: ${{ inputs.shfmt-version }}
+      run: |
+        set -euo pipefail
+
+        case "${RUNNER_OS}-${RUNNER_ARCH}" in
+          Linux-X64)
+            asset="shfmt_${SHFMT_VERSION}_linux_amd64"
+            sha="fb096c5d1ac6beabbdbaa2874d025badb03ee07929f0c9ff67563ce8c75398b1"
+            ;;
+          Linux-ARM64)
+            asset="shfmt_${SHFMT_VERSION}_linux_arm64"
+            sha="32d92acaa5cd8abb29fc49dac123dc412442d5713967819d8af2c29f1b3857c7"
+            ;;
+          *)
+            echo "setup-shfmt supports only Linux runners (local dev uses Homebrew): ${RUNNER_OS}-${RUNNER_ARCH}" >&2
+            exit 1
+            ;;
+        esac
+
+        tmp=$(mktemp -d)
+        cd "${tmp}"
+        gh release download "${SHFMT_VERSION}" --repo mvdan/sh --pattern "${asset}"
+        echo "${sha}  ${asset}" | sha256sum -c -
+        install -m 0755 "${asset}" /usr/local/bin/shfmt
+        shfmt --version

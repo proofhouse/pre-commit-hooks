@@ -1,0 +1,66 @@
+---
+# Hook manifest consumed by other repos in the org. Reference it from a
+# .pre-commit-config.yaml with:
+#
+#   repos:
+#     - repo: https://github.com/proofhouse/pre-commit-hooks
+#       rev: v0.1.0
+#       hooks:
+#         - id: commit-trailers
+#         - id: commitlint
+#         - id: vale-commit-msg
+#         - id: cspell-commit-msg
+#
+# Every hook is language: script, so prek runs the checked-out script
+# directly with no managed environment; entry paths resolve relative to
+# this repository's root. All four run on the commit-msg stage and take
+# the commit-message buffer path as their single argument.
+#
+# commit-trailers and commitlint depend only on bash, git, grep, and sed.
+# vale-commit-msg and cspell-commit-msg additionally require the consumer
+# to have vale / cspell installed and a .vale.ini / .cspell.jsonc that
+# configures the commit-message scope.
+
+- id: commit-trailers
+  name: commit-trailers
+  description: >-
+    Enforce the org AI-assistant commit-trailer rules: a kernel-style
+    Assisted-by value, Assisted-by before Signed-off-by, and no LLM
+    attribution in Co-authored-by.
+  entry: scripts/commit-trailers.sh
+  language: script
+  stages: [commit-msg]
+  always_run: true
+
+- id: commitlint
+  name: commitlint
+  description: >-
+    Lint the commit message against Conventional Commits: a recognized
+    type, header length bounds, body and footer line-length caps, and a
+    required Signed-off-by trailer.
+  entry: scripts/commitlint.sh
+  language: script
+  stages: [commit-msg]
+  always_run: true
+
+- id: vale-commit-msg
+  name: vale (commit message)
+  description: >-
+    Lint the commit message with vale under its commit-message scope,
+    after stripping git's helper comments and any verbose-diff scissors
+    block. Requires vale and a .vale.ini in the consumer repo.
+  entry: scripts/vale-commit-msg.sh
+  language: script
+  stages: [commit-msg]
+  always_run: true
+
+- id: cspell-commit-msg
+  name: cspell (commit message)
+  description: >-
+    Spell-check the commit message with cspell on a worktree-relative
+    virtual path so the right dictionary resolves. Requires cspell and a
+    .cspell.jsonc in the consumer repo.
+  entry: scripts/cspell-commit-msg.sh
+  language: script
+  stages: [commit-msg]
+  always_run: true

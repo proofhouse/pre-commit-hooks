@@ -1,0 +1,43 @@
+---
+# Lint every workflow under `.github/workflows/` via actionlint, run from
+# its digest-pinned Docker image (which bundles shellcheck for run:
+# blocks) through `just lint-workflows`. The job runs on every PR that
+# touches a workflow file and on every push to `main`, so the gate guards
+# both ends of the integration path.
+
+name: lint-workflows
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/workflows/**']
+  pull_request:
+    paths: ['.github/workflows/**']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  actionlint:
+    name: actionlint
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Harden the runner
+        uses: step-security/harden-runner@9af89fc71515a100421586dfdb3dc9c984fbf411 # v2.19.4
+        with:
+          egress-policy: audit
+
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Set up just
+        uses: ./.github/actions/setup-just
+
+      - name: Run actionlint
+        run: just lint-workflows
