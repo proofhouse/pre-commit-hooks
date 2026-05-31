@@ -36,7 +36,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up just
-        uses: ./.github/actions/setup-just
+        uses: proofhouse/github-actions/.github/actions/setup-just@c55eeb3115d95f6b8777538b4d6f49d48830e199 # v0.2.0
 
       - name: Set up shfmt
         uses: ./.github/actions/setup-shfmt
@@ -59,7 +59,7 @@ jobs:
           persist-credentials: false
 
       - name: Set up just
-        uses: ./.github/actions/setup-just
+        uses: proofhouse/github-actions/.github/actions/setup-just@c55eeb3115d95f6b8777538b4d6f49d48830e199 # v0.2.0
 
       - name: Test
         run: just test
