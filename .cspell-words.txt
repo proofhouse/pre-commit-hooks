@@ -292,3 +292,4 @@ slotsdir
 rhysd
 koalaman
 mvdan
+tmpl

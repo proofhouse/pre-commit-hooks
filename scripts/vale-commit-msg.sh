@@ -23,6 +23,23 @@ set -euo pipefail
 
 msg_file=$1
 
+# Consumer repos that carry the org agent-output template under their
+# StylesPath get one self-contained line per finding instead of vale's
+# default human-oriented output. vale resolves a bare template name
+# against `<StylesPath>/config/templates/`, and the hook runs from the
+# consumer repo's root, so probing that path through the StylesPath in
+# the local .vale.ini decides whether the template exists. The parse
+# reads the value from the config because consumer repos differ on the
+# directory name (`.vale` here, `styles` elsewhere). When .vale.ini,
+# the StylesPath key, or the template file is missing, the flag stays
+# empty and the default output is unchanged.
+template=proofhouse-agent.tmpl
+styles_path=$(sed -nE 's/^StylesPath[[:space:]]*=[[:space:]]*(.*[^[:space:]])[[:space:]]*$/\1/p' .vale.ini 2>/dev/null | head -n 1)
+output_flag=''
+if [[ -n $styles_path && -f "$styles_path/config/templates/$template" ]]; then
+  output_flag="--output=$template"
+fi
+
 # vale selects its rule scope from the path of the file it lints. An
 # earlier version copied the cleaned message to a temp `*.md` file,
 # which matched the generic `[*.md]` scope and silently skipped the
@@ -41,4 +58,4 @@ msg_file=$1
 # rules.
 sed -E '/^[#;] *-+ *>8 *-+ *$/,$d' "$msg_file" |
   git stripspace --strip-comments |
-  vale --path="$(basename "$msg_file")"
+  vale ${output_flag:+"$output_flag"} --path="$(basename "$msg_file")"
