@@ -123,7 +123,7 @@ lint-workflows:
 
 # Lint Markdown prose via vale (local; not part of the CI lint gate).
 lint-prose *args:
-    vale --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,.claude/worktrees/*,COMMIT_AGENTMSG}' {{ if args == "" { "." } else { args } }}
+    vale --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,.claude/worktrees/*,apm_modules/*,COMMIT_AGENTMSG}' {{ if args == "" { "." } else { args } }}
 
 # Spell-check the tree via cspell (local; not part of the CI lint gate).
 lint-spelling *args:
