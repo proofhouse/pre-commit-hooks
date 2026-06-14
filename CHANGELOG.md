@@ -1,6 +1,25 @@
 # Changelog
 
-## [v0.2.0](https://github.com/proofhouse/pre-commit-hooks/compare/v0.1.0..v0.2.0) - 2026-06-12
+## [v0.3.0](https://github.com/proofhouse/pre-commit-hooks/compare/v0.2.0..v0.3.0) - 2026-06-14
+
+### Features
+
+- cap commit body lines at 72 columns (#19) - ([e65425a](https://github.com/proofhouse/pre-commit-hooks/commit/e65425a898b1eed195fa60540283eb97725cafa9)) - [@tbhb](https://github.com/tbhb)
+- require a Signed-off-by trailer in commit-trailers (#18) - ([2c613d1](https://github.com/proofhouse/pre-commit-hooks/commit/2c613d1712ac5afd510bf1558bfe932ccc8ced22)) - [@tbhb](https://github.com/tbhb)
+
+#### Documentation
+
+- fix the build metadata date comment (#21) - ([731900c](https://github.com/proofhouse/pre-commit-hooks/commit/731900cd706e695624c8ea9067abc2f9d28fc117)) - [@tbhb](https://github.com/tbhb)
+
+#### Continuous Integration
+
+- advance the github-actions pins to v0.2.1 (#20) - ([928d364](https://github.com/proofhouse/pre-commit-hooks/commit/928d36410dd60a728f4c9a325db9bfba78d48f08)) - [@tbhb](https://github.com/tbhb)
+- default vale output to the agent template - ([eefb85f](https://github.com/proofhouse/pre-commit-hooks/commit/eefb85fd11afd5d09029a8770355f6b6d3acae78)) - [@tbhb](https://github.com/tbhb)
+- adopt the shared proofhouse vale package - ([8c385c1](https://github.com/proofhouse/pre-commit-hooks/commit/8c385c1f7aed466a9f55b9b0d3874e9fe554878d)) - [@tbhb](https://github.com/tbhb)
+
+- - -
+
+## [v0.2.0](https://github.com/proofhouse/pre-commit-hooks/compare/v0.1.0..v0.2.0) - 2026-06-13
 
 ### Features
 
