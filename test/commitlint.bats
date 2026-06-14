@@ -132,19 +132,27 @@ EOF
 
 # --- body / footer length caps ---
 
-@test "rejects a body line over the 200-char cap" {
+@test "rejects a body line over the 72-char cap" {
   local long
-  long=$(printf 'x%.0s' {1..205})
+  long=$(printf 'x%.0s' {1..73})
   msg=$(printf 'feat: a valid subject here\n\n%s\n\nSigned-off-by: T <t@e.com>\n' "$long" | write_msg)
   run "$SCRIPT" "$msg"
   [ "$status" -eq 1 ]
   [[ "$output" == *"body line"* ]]
 }
 
-@test "allows a body line between the footer and body caps" {
-  local mid
-  mid=$(printf 'x%.0s' {1..150})
-  msg=$(printf 'feat: a valid subject here\n\n%s\n\nSigned-off-by: T <t@e.com>\n' "$mid" | write_msg)
+@test "allows a body line at the 72-char cap" {
+  local edge
+  edge=$(printf 'x%.0s' {1..72})
+  msg=$(printf 'feat: a valid subject here\n\n%s\n\nSigned-off-by: T <t@e.com>\n' "$edge" | write_msg)
+  run "$SCRIPT" "$msg"
+  [ "$status" -eq 0 ]
+}
+
+@test "holds footer lines to the looser footer cap, not the body cap" {
+  local trailer
+  trailer="Reviewed-by: $(printf 'x%.0s' {1..77})"
+  msg=$(printf 'feat: a valid subject here\n\nA body line.\n\n%s\nSigned-off-by: T <t@e.com>\n' "$trailer" | write_msg)
   run "$SCRIPT" "$msg"
   [ "$status" -eq 0 ]
 }

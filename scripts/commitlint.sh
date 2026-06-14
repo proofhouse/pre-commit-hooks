@@ -17,11 +17,14 @@
 # runnable in a minimal container; it assumes the default # comment char.
 set -euo pipefail
 
-# Rule parameters. Defaults match the retired .commitlint.yaml; each is
-# overridable so a consumer repo can retune without editing the script.
+# Rule parameters. The header and footer bounds match the retired
+# .commitlint.yaml; the body cap follows the org's 72-column wrap
+# convention so an over-length body line fails mechanically instead of
+# slipping past review. Each is overridable so a consumer repo can
+# retune without editing the script.
 readonly HEADER_MIN_LENGTH=${COMMITLINT_HEADER_MIN_LENGTH:-10}
 readonly HEADER_MAX_LENGTH=${COMMITLINT_HEADER_MAX_LENGTH:-80}
-readonly BODY_MAX_LINE_LENGTH=${COMMITLINT_BODY_MAX_LINE_LENGTH:-200}
+readonly BODY_MAX_LINE_LENGTH=${COMMITLINT_BODY_MAX_LINE_LENGTH:-72}
 readonly FOOTER_MAX_LINE_LENGTH=${COMMITLINT_FOOTER_MAX_LINE_LENGTH:-100}
 readonly REQUIRE_SIGNED_OFF_BY=${COMMITLINT_REQUIRE_SIGNED_OFF_BY:-1}
 readonly TYPES_DEFAULT="feat fix docs style refactor perf test build ci chore revert"
