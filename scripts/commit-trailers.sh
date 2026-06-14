@@ -13,6 +13,8 @@
 #           must come first.
 #   Rule 3: A Co-authored-by trailer attributing the work to a known LLM
 #           is rejected; LLM attribution belongs in Assisted-by.
+#   Rule 4: A Signed-off-by trailer is required. commitlint also checks
+#           this, so the DCO gate holds even when commitlint is skipped.
 #
 # Reads the commit message from the file named by $1, or from stdin when
 # no argument is given. The commit-msg hook passes the buffer path as $1.
@@ -79,6 +81,11 @@ main() {
 
   if [ "$assisted_at" -gt 0 ] && [ "$signed_at" -gt 0 ] && [ "$assisted_at" -gt "$signed_at" ]; then
     report "trailer order: Assisted-by must appear before Signed-off-by (line ${assisted_at} after line ${signed_at})"
+    failed=1
+  fi
+
+  if [ "$signed_at" -eq 0 ]; then
+    report "missing required Signed-off-by trailer (DCO)"
     failed=1
   fi
 
