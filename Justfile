@@ -61,7 +61,7 @@ gitleaks_image := "ghcr.io/gitleaks/gitleaks:v8.28.0@sha256:cdbb7c955abce02001a9
 gitleaks_scan := docker_run + ' -v "$(pwd):/repo" -w /repo ' + gitleaks_image
 
 # version/commit/date describe the current checkout for `just version` and
-# the release-notes recipes; the date is the commit author date (UTC).
+# the release-notes recipes; the date is the committer date (UTC).
 
 version := `git describe --tags --abbrev=7 2>/dev/null || git rev-parse --short=7 HEAD 2>/dev/null || echo "DEV"`
 commit := `git rev-parse --short=7 HEAD 2>/dev/null || echo ""`
