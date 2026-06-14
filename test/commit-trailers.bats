@@ -9,11 +9,13 @@ setup() {
 
 # --- Rule 1: Assisted-by format ---
 
-@test "passes when no trailers are present" {
+@test "passes a message carrying only a sign-off" {
   run "$SCRIPT" <<'EOF'
 feat: a change
 
-A body paragraph with no trailers at all.
+A body paragraph with no assistant trailers.
+
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 0 ]
 }
@@ -23,6 +25,7 @@ EOF
 feat: a change
 
 Assisted-by: claude-code:opus-4.8
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 0 ]
 }
@@ -32,6 +35,7 @@ EOF
 feat: a change
 
 Assisted-by: claude:opus-4.8 claude-code zed
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 0 ]
 }
@@ -41,6 +45,7 @@ EOF
 feat: a change
 
 Assisted-by: claude-code/opus
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 1 ]
   [[ "$output" == *"malformed Assisted-by value"* ]]
@@ -52,6 +57,7 @@ EOF
 feat: a change
 
 Assisted-by: Claude:Opus
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 1 ]
   [[ "$output" == *"malformed Assisted-by value"* ]]
@@ -66,6 +72,7 @@ EOF
 feat: a change
 
 Assisted-by: claude-code:opus-4.8,
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 1 ]
 }
@@ -77,6 +84,7 @@ EOF
 feat: a change
 
 Co-authored-by: Jane Doe <jane@example.com>
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 0 ]
 }
@@ -86,6 +94,7 @@ EOF
 feat: a change
 
 Co-authored-by: Kai Mailer <kai@example.com>
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 0 ]
 }
@@ -95,6 +104,7 @@ EOF
 feat: a change
 
 Co-authored-by: Claude <noreply@anthropic.com>
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 1 ]
   [[ "$output" == *"forbidden Co-authored-by attribution to an LLM"* ]]
@@ -105,6 +115,7 @@ EOF
 feat: a change
 
 Co-authored-by: ai <ai@example.com>
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 1 ]
 }
@@ -141,6 +152,20 @@ EOF
   [ "$status" -eq 0 ]
 }
 
+# --- Rule 4: required Signed-off-by ---
+
+@test "rejects a message with no Signed-off-by" {
+  run "$SCRIPT" <<'EOF'
+feat: a change
+
+A body paragraph with an assist trailer but no sign-off.
+
+Assisted-by: claude-code:opus-4.8
+EOF
+  [ "$status" -eq 1 ]
+  [[ "$output" == *"missing required Signed-off-by"* ]]
+}
+
 # --- Aggregation and input handling ---
 
 @test "reports every violation in one run" {
@@ -149,6 +174,7 @@ feat: a change
 
 Assisted-by: bad/value
 Co-authored-by: gpt <gpt@example.com>
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   [ "$status" -eq 1 ]
   [[ "$output" == *"malformed Assisted-by value"* ]]
@@ -161,6 +187,7 @@ EOF
 feat: a change
 
 Assisted-by: claude-code:opus-4.8
+Signed-off-by: Tony Burns <tony@example.com>
 EOF
   run "$SCRIPT" "$msg"
   [ "$status" -eq 0 ]
