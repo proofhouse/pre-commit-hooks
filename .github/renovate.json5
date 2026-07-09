@@ -1,27 +1,32 @@
 {
   $schema: "https://docs.renovatebot.com/renovate-schema.json",
 
-  // This repo's Renovate config is mostly shared org policy, pulled in from
-  // the two presets in proofhouse/github-actions:
+  // This repo's Renovate config pulls shared org policy from the
+  // renovate-config.json5 preset in proofhouse/github-actions via extends —
+  // the repository-level rules plus the Justfile and Vale custom managers
+  // shared by every repo.
   //
-  //   - renovate-global-config.json5 via globalExtends — the global-only
-  //     identity, rate limits, and requireConfig (resolved at global-config
-  //     time, the only scope where those options take effect).
-  //   - renovate-config.json5 via extends — the repository-level rules plus
-  //     the Justfile and Vale custom managers shared by every repo.
+  // The global-only options (identity, rate limits, requireConfig) are
+  // inlined below instead of using globalExtends: Renovate resolves
+  // globalExtends presets before hostRules are registered, so the preset
+  // fetch is always anonymous and intermittently hits GitHub's per-IP
+  // anonymous rate limit on shared runners (config-presets-invalid).
+  // extends is resolved after platform init with token auth, so it is
+  // unaffected.
   //
   // Only what's specific to this repo stays inline: its repository scope and
   // the custom managers for files unique to it. `customManagers` is a
   // mergeable array, so these append to the preset's managers.
-  globalExtends: [
-    "github>proofhouse/github-actions//.github/renovate-global-config.json5",
-  ],
+  requireConfig: "ignored",
+  username: "proofhouse-renovate[bot]",
+  gitAuthor: "proofhouse-renovate[bot] <289255489+proofhouse-renovate[bot]@users.noreply.github.com>",
+  prConcurrentLimit: 0,
+  prHourlyLimit: 0,
   extends: [
     "github>proofhouse/github-actions//.github/renovate-config.json5",
   ],
 
-  // Single-repo scope. The one global-only option that can't move to the
-  // shared preset — it differs per repo.
+  // Single-repo scope. Differs per repo.
   repositories: ["proofhouse/pre-commit-hooks"],
 
   customManagers: [
