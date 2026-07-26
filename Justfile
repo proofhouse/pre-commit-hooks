@@ -50,8 +50,8 @@ shellcheck := docker_run + ' -v "$(pwd):/mnt:ro" -w /mnt ' + shellcheck_image
 
 # renovate: datasource=docker depName=bats/bats
 
-bats_version := "1.13.0"
-bats_image := "docker.io/bats/bats:1.13.0@sha256:6e4b9369468b7f3fd8f402ac6cc8ea7b2e4903eae28d08785f31a0245eb51a44"
+bats_version := "1.14.0"
+bats_image := "docker.io/bats/bats:1.14.0@sha256:5322b877351fda0cc435de8c6116de7d0a2ec79d7c680132a0ef329a633bc66f"
 bats := docker_run + ' -v "$(pwd):/code" -w /code ' + bats_image
 
 # renovate: datasource=docker depName=ghcr.io/gitleaks/gitleaks
