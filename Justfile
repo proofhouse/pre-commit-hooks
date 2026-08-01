@@ -89,6 +89,8 @@ date := `TZ=UTC git log -1 --format=%cd --date=format-local:%Y-%m-%dT%H:%M:%SZ 2
 # Default recipe: lint then test.
 default: lint test
 
+# --- Setup ---
+
 # Set up the dev environment (brew deps, Vale styles, git hooks). Idempotent.
 setup: install-brew install-tools prek-install
 
@@ -99,6 +101,8 @@ install-brew:
 # Refresh non-brew tooling — today, Vale's synced style packages.
 install-tools:
     vale sync
+
+# --- Format ---
 
 # Format shell scripts in place via shfmt (reads .editorconfig).
 [script]
@@ -133,9 +137,13 @@ format-just:
 # Run every formatter over the tree.
 format: format-shell format-markdown format-config format-toml format-just
 
+# --- Fix ---
+
 # Apply rumdl's auto-fixable Markdown rules (complements format-markdown).
 fix-markdown *args:
     rumdl check --fix {{ if args == "" { "." } else { args } }}
+
+# --- Lint ---
 
 # Every gate below also runs in CI: this repo ships shell hooks and the
 # docs around them, so the prose, spelling, Markdown, config, and YAML
@@ -249,13 +257,19 @@ lint-commit-msg:
     scripts/commitlint.sh COMMIT_AGENTMSG
     scripts/commit-trailers.sh COMMIT_AGENTMSG
 
+# --- Test ---
+
 # Run the bats test suites under test/ via the pinned bats image.
 test *args:
     {{ bats }} {{ if args == "" { "test" } else { args } }}
 
+# --- Security ---
+
 # Scan the working tree and full history for secrets via the pinned gitleaks image.
 gitleaks:
     {{ gitleaks_scan }} git --verbose .
+
+# --- Aggregators ---
 
 # Security sub-aggregator, so the security workflow invokes one recipe.
 security: gitleaks
@@ -265,6 +279,8 @@ check: lint test
 
 # Comprehensive bar: check plus the full-history gitleaks scan.
 check-all: check gitleaks
+
+# --- Utilities ---
 
 # Print version information.
 version:
