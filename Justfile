@@ -114,16 +114,19 @@ format-markdown *args:
 format-config *args:
     biome format --write {{ if args == "" { "." } else { args } }}
 
-# In-place TOML formatter (tombi 1.2.0) — the fixer paired with `lint-toml`'s --check
-# gate. Rewrites whitespace/style only; key and array order are preserved (schema-driven
-# reordering is disabled in tombi.toml). Excludes and lockfile skips come from tombi.toml.
+# Rewrites whitespace/style only; key and array order are preserved
+# (schema-driven reordering is disabled in tombi.toml). Excludes and
+# lockfile skips come from tombi.toml.
+
+# Format TOML in place (tombi 1.2.0), pairing with `lint-toml`'s --check gate.
 format-toml:
     tombi format
 
-# Reformat this Justfile in place via just's own formatter. `--fmt` is
-# still gated behind --unstable; the `set unstable` at the top of this
-# file already lifts that gate, but the flag is spelled out so the recipe
-# does not depend on a setting a future edit could narrow.
+# `--fmt` is still gated behind --unstable; the `set unstable` at the top
+# of this file already lifts that gate, but the flag is spelled out so the
+# recipe does not depend on a setting a future edit could narrow.
+
+# Reformat this Justfile in place via just's own formatter.
 format-just:
     just --fmt --unstable
 
@@ -134,10 +137,12 @@ format: format-shell format-markdown format-config format-toml format-just
 fix-markdown *args:
     rumdl check --fix {{ if args == "" { "." } else { args } }}
 
-# Run the full lint bar. Every gate below also runs in CI: this repo ships
-# shell hooks and the docs around them, so the prose, spelling, Markdown,
-# config, and YAML linters are code gates here rather than local-only
-# conveniences as in the Go siblings.
+# Every gate below also runs in CI: this repo ships shell hooks and the
+# docs around them, so the prose, spelling, Markdown, config, and YAML
+# linters are code gates here rather than local-only conveniences as in
+# the Go siblings.
+
+# Run the full lint bar.
 lint: lint-shell lint-shell-bats lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-toml lint-just lint-editorconfig
 
 # Lint every tracked *.sh via the pinned shellcheck image (skips *.bats).
@@ -146,13 +151,15 @@ lint-shell:
     files=$(git ls-files '*.sh')
     if [ -n "$files" ]; then {{ shellcheck }} $files; fi
 
-# Lint every tracked *.bats via the same pinned image. The suites under
-# test/ are bash, but their `#!/usr/bin/env bats` shebang names no dialect
-# shellcheck knows, so they need an explicit --shell=bash — which is why
-# they get their own recipe rather than joining the one above, where the
-# flag would override the *.sh scripts' own shebangs. Nothing else: bats'
-# `@test "name" { ... }` blocks parse as ordinary bash command groups, and
-# `run`/`load` as ordinary commands, so the suites need no suppressions.
+# The suites under test/ are bash, but their `#!/usr/bin/env bats` shebang
+# names no dialect shellcheck knows, so they need an explicit --shell=bash
+# — which is why they get their own recipe rather than joining the one
+# above, where the flag would override the *.sh scripts' own shebangs.
+# Nothing else: bats' `@test "name" { ... }` blocks parse as ordinary bash
+# command groups, and `run`/`load` as ordinary commands, so the suites
+# need no suppressions.
+
+# Lint every tracked *.bats via the pinned shellcheck image.
 [script]
 lint-shell-bats:
     files=$(git ls-files '*.bats')
@@ -188,7 +195,6 @@ lint-config *args:
 lint-yaml *args:
     yamllint --strict {{ if args == "" { "." } else { args } }}
 
-# tombi is the org TOML gate (tombi 1.2.0): it lint-checks every tracked *.toml.
 # cog.toml and .rumdl.toml get syntax + style checks (validated offline against embedded
 # SchemaStore schemas where one exists). We run the format gate in --check --diff mode
 # here as well, so an unformatted TOML file fails the gate without being rewritten
@@ -199,15 +205,17 @@ lint-yaml *args:
 # walks the tree per that config. This deliberately departs from the sibling
 # *args-default-`.` idiom because tombi centralizes scoping in tombi.toml rather than on
 # the CLI.
+
+# Lint every tracked *.toml via tombi 1.2.0, the org TOML gate.
 lint-toml:
     tombi format --check --diff
     tombi lint --offline --error-on-warnings
 
-# Warn when the locally installed tombi differs from the verified
-# release. Advisory rather than fatal: tombi comes from Homebrew and
-# moves on its own schedule, and that is fine so long as it stays
-# visible rather than silently reformatting a file the gate then
-# rejects.
+# Advisory rather than fatal: tombi comes from Homebrew and moves on its
+# own schedule, and that is fine so long as it stays visible rather than
+# silently reformatting a file the gate then rejects.
+
+# Warn when the locally installed tombi differs from the verified release.
 [script]
 check-tombi-version:
     local=$(tombi --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
@@ -218,17 +226,19 @@ check-tombi-version:
         echo "tombi ${local} matches the verified release"
     fi
 
-# Fail if just's own formatter would rewrite this Justfile (mirrors
-# format-just). It prints a unified diff of what it would change.
+# Mirrors format-just. It prints a unified diff of what it would change.
+
+# Fail if just's own formatter would rewrite this Justfile.
 lint-just:
     just --fmt --check --unstable
 
-# Enforce .editorconfig across tracked files via editorconfig-checker.
 # With no file arguments it walks git's index, so the gitignored Vale
 # style packages never reach it; .editorconfig-checker.json mirrors the
 # prek `exclude:` scope anyway. Indent size is checked tree-wide; the one
 # span that cannot satisfy it, the container-runtime probe at the top of
 # this file, carries inline disable markers rather than a global opt-out.
+
+# Enforce .editorconfig across tracked files via editorconfig-checker.
 lint-editorconfig:
     editorconfig-checker
 
@@ -278,9 +288,11 @@ prek-all:
 prek-install:
     prek install -t commit-msg -t pre-commit -t pre-push
 
-# Generate CHANGELOG.md from Conventional Commit history via cog. Lint the
-# file in place so the CHANGELOG.md per-file-ignores in .rumdl.toml apply
-# (rumdl matches those globs against on-disk paths, not stdin).
+# Lint the file in place so the CHANGELOG.md per-file-ignores in
+# .rumdl.toml apply (rumdl matches those globs against on-disk paths, not
+# stdin).
+
+# Generate CHANGELOG.md from Conventional Commit history via cog.
 generate-changelog:
     cog changelog | { echo "# Changelog"; cat; } > CHANGELOG.md
     rumdl check --fix CHANGELOG.md
@@ -289,9 +301,11 @@ generate-changelog:
 preview-changelog:
     cog changelog --at $(git describe --tags)..HEAD -t full_hash | rumdl check -d MD041 --fix --stdin
 
-# Generate release notes for a version (or HEAD); prints to stdout. MD041
-# is disabled for the heading-less fragment; without --isolated, MD013
-# stays off via .rumdl.toml so the full commit hashes are never wrapped.
+# MD041 is disabled for the heading-less fragment; without --isolated,
+# MD013 stays off via .rumdl.toml so the full commit hashes are never
+# wrapped.
+
+# Generate release notes for a version (or HEAD); prints to stdout.
 [script]
 generate-release-notes version="":
     v=$([[ -n "{{ version }}" ]] && echo "v{{ version }}" || echo "..$(git rev-parse HEAD)")
