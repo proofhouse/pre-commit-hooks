@@ -117,8 +117,11 @@ format: format-shell format-markdown format-config format-toml
 fix-markdown *args:
     rumdl check --fix {{ if args == "" { "." } else { args } }}
 
-# Run the CI lint gates: shell (shellcheck + shfmt) and workflows (actionlint).
-lint: lint-shell lint-shell-fmt lint-workflows
+# Run the full lint bar. Every gate below also runs in CI: this repo ships
+# shell hooks and the docs around them, so the prose, spelling, Markdown,
+# config, and YAML linters are code gates here rather than local-only
+# conveniences as in the Go siblings.
+lint: lint-shell lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml
 
 # Lint every tracked *.sh via the pinned shellcheck image (skips *.bats).
 [script]
@@ -136,23 +139,23 @@ lint-shell-fmt:
 lint-workflows:
     {{ actionlint }}
 
-# Lint Markdown prose via vale (local; not part of the CI lint gate).
+# Lint Markdown prose via vale.
 lint-prose *args:
     vale --output=proofhouse-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,.claude/worktrees/*,apm_modules/*,COMMIT_AGENTMSG}' {{ if args == "" { "." } else { args } }}
 
-# Spell-check the tree via cspell (local; not part of the CI lint gate).
+# Spell-check the tree via cspell.
 lint-spelling *args:
     cspell --config .cspell.jsonc --no-summary --no-progress --no-must-find-files --exclude COMMIT_AGENTMSG {{ if args == "" { "." } else { args } }}
 
-# Lint Markdown structure via rumdl (local; not part of the CI lint gate).
+# Lint Markdown structure via rumdl.
 lint-markdown *args:
     rumdl check {{ if args == "" { "." } else { args } }}
 
-# Lint JSON / JS / TS via biome (local; not part of the CI lint gate).
+# Lint JSON / JS / TS via biome.
 lint-config *args:
     biome check --files-ignore-unknown=true {{ if args == "" { "." } else { args } }}
 
-# Lint YAML via yamllint --strict (local; not part of the CI lint gate).
+# Lint YAML via yamllint --strict.
 lint-yaml *args:
     yamllint --strict {{ if args == "" { "." } else { args } }}
 
