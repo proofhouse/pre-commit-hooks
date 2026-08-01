@@ -71,6 +71,13 @@ repos:
         language: system
         files: \.sh$
 
+      - id: tombi
+        name: tombi (TOML lint + format-check)
+        entry: just lint-toml
+        language: system
+        types: [toml]
+        pass_filenames: false
+
       # Tree-wide spell check at pre-commit and pre-push. Scoped off the
       # commit-msg stage so the cspell-commit hook below owns the commit
       # buffer with worktree-safe config resolution.

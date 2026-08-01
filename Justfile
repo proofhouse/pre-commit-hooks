@@ -95,8 +95,14 @@ format-markdown *args:
 format-config *args:
     biome format --write {{ if args == "" { "." } else { args } }}
 
+# In-place TOML formatter (tombi 1.2.0) — the fixer paired with `lint-toml`'s --check
+# gate. Rewrites whitespace/style only; key and array order are preserved (schema-driven
+# reordering is disabled in tombi.toml). Excludes and lockfile skips come from tombi.toml.
+format-toml:
+    tombi format
+
 # Run every formatter over the tree.
-format: format-shell format-markdown format-config
+format: format-shell format-markdown format-config format-toml
 
 # Apply rumdl's auto-fixable Markdown rules (complements format-markdown).
 fix-markdown *args:
@@ -140,6 +146,22 @@ lint-config *args:
 # Lint YAML via yamllint --strict (local; not part of the CI lint gate).
 lint-yaml *args:
     yamllint --strict {{ if args == "" { "." } else { args } }}
+
+# tombi is the org TOML gate (tombi 1.2.0): it lint-checks every tracked *.toml.
+# cog.toml and .rumdl.toml get syntax + style checks (validated offline against embedded
+# SchemaStore schemas where one exists). We run the format gate in --check --diff mode
+# here as well, so an unformatted TOML file fails the gate without being rewritten
+# (`just format-toml` is the in-place fixer). --offline keeps the check hermetic against
+# SchemaStore; --error-on-warnings promotes warnings to hard failures (matching the org
+# -D-warnings / --max-warnings=0 posture). Scope (include/exclude, lockfile skips,
+# schema.strict=false) lives in tombi.toml, so this recipe passes NO path args — tombi
+# walks the tree per that config. This deliberately departs from the sibling
+# *args-default-`.` idiom because tombi centralizes scoping in tombi.toml rather than on
+# the CLI. Local; not part of the CI lint gate (shell + workflow only), matching the
+# rumdl/biome precedent above.
+lint-toml:
+    tombi format --check --diff
+    tombi lint --offline --error-on-warnings
 
 # Preview the four commit-msg gates against the COMMIT_AGENTMSG draft.
 lint-commit-msg:
