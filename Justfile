@@ -128,7 +128,7 @@ fix-markdown *args:
 # shell hooks and the docs around them, so the prose, spelling, Markdown,
 # config, and YAML linters are code gates here rather than local-only
 # conveniences as in the Go siblings.
-lint: lint-shell lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-just
+lint: lint-shell lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-just lint-editorconfig
 
 # Lint every tracked *.sh and *.bats via the pinned shellcheck image. The
 # suites under test/ are bash, but their `#!/usr/bin/env bats` shebang
@@ -208,6 +208,18 @@ check-tombi-version:
 # format-just). It prints a unified diff of what it would change.
 lint-just:
     just --fmt --check --unstable
+
+# Enforce .editorconfig across tracked files via editorconfig-checker
+# (binary: ec). With no file arguments ec walks git's index, so the
+# gitignored Vale style packages never reach it; .editorconfig-checker.json
+# mirrors the prek `exclude:` scope anyway, and turns off the indent-size
+# check — the embedded container-runtime probe at the top of this file
+# aligns its continuation lines under the opening token, which is not a
+# multiple of indent_size. Indent width is already enforced per language
+# by shfmt, biome, rumdl, and yamllint; what ec adds is the charset,
+# line-ending, final-newline, and trailing-whitespace bar tree-wide.
+lint-editorconfig:
+    ec
 
 # Preview the four commit-msg gates against the COMMIT_AGENTMSG draft.
 lint-commit-msg:

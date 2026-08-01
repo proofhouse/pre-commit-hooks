@@ -1,6 +1,7 @@
 brew "biome"
 brew "cocogitto"
 brew "cspell"
+brew "editorconfig-checker"
 brew "just"
 brew "prek"
 brew "rumdl"

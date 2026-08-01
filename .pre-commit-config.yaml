@@ -97,6 +97,15 @@ repos:
         language: system
         files: ^Justfile$
 
+      # editorconfig-checker enforces .editorconfig itself: charset, line
+      # endings, final newline, and trailing whitespace. Scope and the
+      # indent-size opt-out live in .editorconfig-checker.json.
+      - id: editorconfig-checker
+        name: editorconfig-checker
+        entry: ec
+        language: system
+        types: [text]
+
       # Tree-wide spell check at pre-commit and pre-push. Scoped off the
       # commit-msg stage so the cspell-commit hook below owns the commit
       # buffer with worktree-safe config resolution.
