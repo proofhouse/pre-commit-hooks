@@ -1,5 +1,5 @@
-set unstable := true
-set positional-arguments := true
+set unstable
+set positional-arguments
 
 # Run [script] recipes under bash; on Linux sh is dash, which lacks the
 # [[ ]], <<<, and pipefail constructs those recipes use.
@@ -10,7 +10,13 @@ set script-interpreter := ['bash', '-eu']
 # well-known install locations so the recipe still works inside agentic
 # harnesses or sandboxes that strip /usr/local/bin from PATH. Override by
 # setting CONTAINER_RUNTIME in the environment.
-
+#
+# The continuation lines of the `for` list below hang under the first
+# candidate path rather than on a two-space grid, which is what shell
+# style calls for and what `lint-editorconfig` would otherwise reject
+# under this file's indent_size = 2. Exempt just that span rather than
+# re-indent a block the sibling repos carry verbatim.
+# editorconfig-checker-disable
 container_runtime := env("CONTAINER_RUNTIME", `bash -c '
     docker_path=$(command -v docker 2>/dev/null || true)
     podman_path=$(command -v podman 2>/dev/null || true)
@@ -27,15 +33,19 @@ container_runtime := env("CONTAINER_RUNTIME", `bash -c '
     echo docker
 '`)
 
+# editorconfig-checker-enable
+
 # Shared docker-run prefix. DOCKER_CONFIG points at a fresh empty dir so
 # docker skips the osxkeychain helper; PATH prepends the runtime's dir
 # for shells where docker isn't already on PATH.
 
 docker_run := 'DOCKER_CONFIG="$(mktemp -d)" PATH="$(dirname ' + container_runtime + '):$PATH" ' + container_runtime + ' run --rm'
 
-# Linters and the test runner run from digest-pinned Docker images, so
-# the only host tool the recipes assume on PATH is shfmt (from the
-# Brewfile). Renovate tracks each version + digest pair via the markers.
+# shellcheck, actionlint, bats, and gitleaks run from digest-pinned Docker
+# images, and Renovate tracks each version + digest pair via the markers
+# below. Every other gate assumes its tool on PATH from the Brewfile:
+# shfmt, vale, cspell, rumdl, biome, yamllint, tombi, and
+# editorconfig-checker.
 # The tombi release this repo's config and committed formatting are
 # verified against. tombi is brew-installed, so `check-tombi-version`
 # compares the local binary with it: a mismatch means local formatting
@@ -110,21 +120,43 @@ format-config *args:
 format-toml:
     tombi format
 
+# Reformat this Justfile in place via just's own formatter. `--fmt` is
+# still gated behind --unstable; the `set unstable` at the top of this
+# file already lifts that gate, but the flag is spelled out so the recipe
+# does not depend on a setting a future edit could narrow.
+format-just:
+    just --fmt --unstable
+
 # Run every formatter over the tree.
-format: format-shell format-markdown format-config format-toml
+format: format-shell format-markdown format-config format-toml format-just
 
 # Apply rumdl's auto-fixable Markdown rules (complements format-markdown).
 fix-markdown *args:
     rumdl check --fix {{ if args == "" { "." } else { args } }}
 
-# Run the CI lint gates: shell (shellcheck + shfmt) and workflows (actionlint).
-lint: lint-shell lint-shell-fmt lint-workflows
+# Run the full lint bar. Every gate below also runs in CI: this repo ships
+# shell hooks and the docs around them, so the prose, spelling, Markdown,
+# config, and YAML linters are code gates here rather than local-only
+# conveniences as in the Go siblings.
+lint: lint-shell lint-shell-bats lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-toml lint-just lint-editorconfig
 
 # Lint every tracked *.sh via the pinned shellcheck image (skips *.bats).
 [script]
 lint-shell:
     files=$(git ls-files '*.sh')
     if [ -n "$files" ]; then {{ shellcheck }} $files; fi
+
+# Lint every tracked *.bats via the same pinned image. The suites under
+# test/ are bash, but their `#!/usr/bin/env bats` shebang names no dialect
+# shellcheck knows, so they need an explicit --shell=bash — which is why
+# they get their own recipe rather than joining the one above, where the
+# flag would override the *.sh scripts' own shebangs. Nothing else: bats'
+# `@test "name" { ... }` blocks parse as ordinary bash command groups, and
+# `run`/`load` as ordinary commands, so the suites need no suppressions.
+[script]
+lint-shell-bats:
+    files=$(git ls-files '*.bats')
+    if [ -n "$files" ]; then {{ shellcheck }} --shell=bash $files; fi
 
 # Fail if shfmt would reformat any tracked *.sh (mirrors format-shell).
 [script]
@@ -136,23 +168,23 @@ lint-shell-fmt:
 lint-workflows:
     {{ actionlint }}
 
-# Lint Markdown prose via vale (local; not part of the CI lint gate).
+# Lint Markdown prose via vale.
 lint-prose *args:
     vale --output=proofhouse-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,.claude/worktrees/*,apm_modules/*,COMMIT_AGENTMSG}' {{ if args == "" { "." } else { args } }}
 
-# Spell-check the tree via cspell (local; not part of the CI lint gate).
+# Spell-check the tree via cspell.
 lint-spelling *args:
     cspell --config .cspell.jsonc --no-summary --no-progress --no-must-find-files --exclude COMMIT_AGENTMSG {{ if args == "" { "." } else { args } }}
 
-# Lint Markdown structure via rumdl (local; not part of the CI lint gate).
+# Lint Markdown structure via rumdl.
 lint-markdown *args:
     rumdl check {{ if args == "" { "." } else { args } }}
 
-# Lint JSON / JS / TS via biome (local; not part of the CI lint gate).
+# Lint JSON / JS / TS via biome.
 lint-config *args:
     biome check --files-ignore-unknown=true {{ if args == "" { "." } else { args } }}
 
-# Lint YAML via yamllint --strict (local; not part of the CI lint gate).
+# Lint YAML via yamllint --strict.
 lint-yaml *args:
     yamllint --strict {{ if args == "" { "." } else { args } }}
 
@@ -166,8 +198,7 @@ lint-yaml *args:
 # schema.strict=false) lives in tombi.toml, so this recipe passes NO path args — tombi
 # walks the tree per that config. This deliberately departs from the sibling
 # *args-default-`.` idiom because tombi centralizes scoping in tombi.toml rather than on
-# the CLI. Local; not part of the CI lint gate (shell + workflow only), matching the
-# rumdl/biome precedent above.
+# the CLI.
 lint-toml:
     tombi format --check --diff
     tombi lint --offline --error-on-warnings
@@ -186,6 +217,20 @@ check-tombi-version:
     else
         echo "tombi ${local} matches the verified release"
     fi
+
+# Fail if just's own formatter would rewrite this Justfile (mirrors
+# format-just). It prints a unified diff of what it would change.
+lint-just:
+    just --fmt --check --unstable
+
+# Enforce .editorconfig across tracked files via editorconfig-checker.
+# With no file arguments it walks git's index, so the gitignored Vale
+# style packages never reach it; .editorconfig-checker.json mirrors the
+# prek `exclude:` scope anyway. Indent size is checked tree-wide; the one
+# span that cannot satisfy it, the container-runtime probe at the top of
+# this file, carries inline disable markers rather than a global opt-out.
+lint-editorconfig:
+    editorconfig-checker
 
 # Preview the four commit-msg gates against the COMMIT_AGENTMSG draft.
 lint-commit-msg:

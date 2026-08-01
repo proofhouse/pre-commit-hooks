@@ -1,10 +1,12 @@
 ---
-# Main quality gate. The lint job runs shellcheck (pinned Docker image),
-# shfmt (installed by the setup-shfmt composite), and actionlint (pinned
-# Docker image) through `just lint`; the test job runs the bats suites
-# from the pinned bats Docker image through `just test`. The recipe stays
-# the single definition of what each gate runs. The prose, spelling,
-# Markdown, config, and YAML linters run locally via prek, not in CI.
+# Main quality gate. The lint job runs the full `just lint` bar and the
+# test job runs the bats suites through `just test`, so the Justfile stays
+# the single definition of what each gate runs. shellcheck, actionlint,
+# and bats come from pinned Docker images; shfmt from the setup-shfmt
+# composite; vale from the pinned setup-vale composite; and the rest of
+# the linters (cspell, rumdl, biome, yamllint, tombi, and
+# editorconfig-checker) from the Brewfile toolchain, which Homebrew
+# installs on the runner.
 
 name: ci
 
@@ -40,6 +42,31 @@ jobs:
 
       - name: Set up shfmt
         uses: ./.github/actions/setup-shfmt
+
+      # The runner image ships Homebrew but leaves its prefix off PATH.
+      - name: Put Homebrew on the PATH
+        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> "$GITHUB_PATH"
+
+      # vale comes from the pinned composite rather than the Brewfile, so
+      # the prose gates run a known binary instead of whatever Homebrew
+      # serves that day. It lands on PATH ahead of Homebrew's prefix, so
+      # the Brewfile copy never shadows it.
+      - name: Set up vale
+        uses: proofhouse/github-actions/.github/actions/setup-vale@e95a868f30a34989191902e274e131474f06429f # v0.3.0
+
+      # The image pins an older Homebrew and sets HOMEBREW_NO_AUTO_UPDATE,
+      # but `brew bundle` reads formula metadata from the JSON API, which
+      # serves current definitions. ca-certificates now declares a `run`
+      # install step that the pinned Homebrew cannot parse, failing every
+      # formula that depends on it. Update Homebrew itself first.
+      - name: Update Homebrew
+        run: brew update
+
+      - name: Install Homebrew dependencies
+        run: brew bundle install
+
+      - name: Sync Vale styles
+        run: just install-tools
 
       - name: Lint
         run: just lint

@@ -65,6 +65,19 @@ repos:
         language: system
         files: \.sh$
 
+      # The bats suites are bash, but their `#!/usr/bin/env bats` shebang
+      # names no dialect shellcheck knows, so they need --shell=bash. They
+      # get their own hook rather than joining the one above: forcing the
+      # dialect on the *.sh scripts would override their own shebangs. The
+      # recipe runs the SHA-pinned shellcheck image the CI gate uses, so a
+      # differently-versioned shellcheck on PATH cannot disagree with it.
+      - id: shellcheck-bats
+        name: shellcheck (bats)
+        entry: just lint-shell-bats
+        language: system
+        files: \.bats$
+        pass_filenames: false
+
       - id: shfmt
         name: shfmt
         entry: shfmt -w
@@ -76,6 +89,26 @@ repos:
         entry: just lint-toml
         language: system
         types: [toml]
+        pass_filenames: false
+
+      # `just format-just` is the in-place fixer; the recipe here only
+      # reports the diff it would apply.
+      - id: just-fmt
+        name: just --fmt --check
+        entry: just lint-just
+        language: system
+        files: ^Justfile$
+        pass_filenames: false
+
+      # Whole-tree run on every commit. editorconfig-checker walks the git
+      # index itself and finishes in well under a second, and its scope
+      # lives in .editorconfig-checker.json, so passing filenames here would
+      # only give the hook a second, drifting copy of that scope.
+      - id: editorconfig-checker
+        name: editorconfig-checker
+        entry: just lint-editorconfig
+        language: system
+        types: [text]
         pass_filenames: false
 
       # Tree-wide spell check at pre-commit and pre-push. Scoped off the
