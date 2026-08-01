@@ -4,8 +4,9 @@
 # the single definition of what each gate runs. shellcheck, actionlint,
 # and bats come from pinned Docker images; shfmt from the setup-shfmt
 # composite; vale from the pinned setup-vale composite; and the rest of
-# the linters (cspell, rumdl, biome, yamllint, editorconfig-checker) from
-# the Brewfile toolchain, which Homebrew installs on the runner.
+# the linters (cspell, rumdl, biome, yamllint, tombi, and
+# editorconfig-checker) from the Brewfile toolchain, which Homebrew
+# installs on the runner.
 
 name: ci
 

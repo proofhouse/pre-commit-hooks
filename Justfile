@@ -128,7 +128,7 @@ fix-markdown *args:
 # shell hooks and the docs around them, so the prose, spelling, Markdown,
 # config, and YAML linters are code gates here rather than local-only
 # conveniences as in the Go siblings.
-lint: lint-shell lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-just lint-editorconfig
+lint: lint-shell lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-toml lint-just lint-editorconfig
 
 # Lint every tracked *.sh and *.bats via the pinned shellcheck image. The
 # suites under test/ are bash, but their `#!/usr/bin/env bats` shebang
@@ -183,8 +183,7 @@ lint-yaml *args:
 # schema.strict=false) lives in tombi.toml, so this recipe passes NO path args — tombi
 # walks the tree per that config. This deliberately departs from the sibling
 # *args-default-`.` idiom because tombi centralizes scoping in tombi.toml rather than on
-# the CLI. Local; not part of the CI lint gate (shell + workflow only), matching the
-# rumdl/biome precedent above.
+# the CLI.
 lint-toml:
     tombi format --check --diff
     tombi lint --offline --error-on-warnings
