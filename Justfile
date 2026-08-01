@@ -10,7 +10,13 @@ set script-interpreter := ['bash', '-eu']
 # well-known install locations so the recipe still works inside agentic
 # harnesses or sandboxes that strip /usr/local/bin from PATH. Override by
 # setting CONTAINER_RUNTIME in the environment.
-
+#
+# The continuation lines of the `for` list below hang under the first
+# candidate path rather than on a two-space grid, which is what shell
+# style calls for and what `lint-editorconfig` would otherwise reject
+# under this file's indent_size = 2. Exempt just that span rather than
+# re-indent a block the sibling repos carry verbatim.
+# editorconfig-checker-disable
 container_runtime := env("CONTAINER_RUNTIME", `bash -c '
     docker_path=$(command -v docker 2>/dev/null || true)
     podman_path=$(command -v podman 2>/dev/null || true)
@@ -27,15 +33,19 @@ container_runtime := env("CONTAINER_RUNTIME", `bash -c '
     echo docker
 '`)
 
+# editorconfig-checker-enable
+
 # Shared docker-run prefix. DOCKER_CONFIG points at a fresh empty dir so
 # docker skips the osxkeychain helper; PATH prepends the runtime's dir
 # for shells where docker isn't already on PATH.
 
 docker_run := 'DOCKER_CONFIG="$(mktemp -d)" PATH="$(dirname ' + container_runtime + '):$PATH" ' + container_runtime + ' run --rm'
 
-# Linters and the test runner run from digest-pinned Docker images, so
-# the only host tool the recipes assume on PATH is shfmt (from the
-# Brewfile). Renovate tracks each version + digest pair via the markers.
+# shellcheck, actionlint, bats, and gitleaks run from digest-pinned Docker
+# images, and Renovate tracks each version + digest pair via the markers
+# below. Every other gate assumes its tool on PATH from the Brewfile:
+# shfmt, vale, cspell, rumdl, biome, yamllint, tombi, and
+# editorconfig-checker.
 # The tombi release this repo's config and committed formatting are
 # verified against. tombi is brew-installed, so `check-tombi-version`
 # compares the local binary with it: a mismatch means local formatting
@@ -128,20 +138,25 @@ fix-markdown *args:
 # shell hooks and the docs around them, so the prose, spelling, Markdown,
 # config, and YAML linters are code gates here rather than local-only
 # conveniences as in the Go siblings.
-lint: lint-shell lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-toml lint-just lint-editorconfig
+lint: lint-shell lint-shell-bats lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-toml lint-just lint-editorconfig
 
-# Lint every tracked *.sh and *.bats via the pinned shellcheck image. The
-# suites under test/ are bash, but their `#!/usr/bin/env bats` shebang
-# names no dialect shellcheck knows, so they need an explicit
-# --shell=bash. Nothing else: bats' `@test "name" { ... }` blocks parse
-# as ordinary bash command groups, and `run`/`load` as ordinary commands,
-# so the suites need no suppressions.
+# Lint every tracked *.sh via the pinned shellcheck image (skips *.bats).
 [script]
 lint-shell:
     files=$(git ls-files '*.sh')
     if [ -n "$files" ]; then {{ shellcheck }} $files; fi
-    bats_files=$(git ls-files '*.bats')
-    if [ -n "$bats_files" ]; then {{ shellcheck }} --shell=bash $bats_files; fi
+
+# Lint every tracked *.bats via the same pinned image. The suites under
+# test/ are bash, but their `#!/usr/bin/env bats` shebang names no dialect
+# shellcheck knows, so they need an explicit --shell=bash — which is why
+# they get their own recipe rather than joining the one above, where the
+# flag would override the *.sh scripts' own shebangs. Nothing else: bats'
+# `@test "name" { ... }` blocks parse as ordinary bash command groups, and
+# `run`/`load` as ordinary commands, so the suites need no suppressions.
+[script]
+lint-shell-bats:
+    files=$(git ls-files '*.bats')
+    if [ -n "$files" ]; then {{ shellcheck }} --shell=bash $files; fi
 
 # Fail if shfmt would reformat any tracked *.sh (mirrors format-shell).
 [script]
@@ -208,17 +223,14 @@ check-tombi-version:
 lint-just:
     just --fmt --check --unstable
 
-# Enforce .editorconfig across tracked files via editorconfig-checker
-# (binary: ec). With no file arguments ec walks git's index, so the
-# gitignored Vale style packages never reach it; .editorconfig-checker.json
-# mirrors the prek `exclude:` scope anyway, and turns off the indent-size
-# check — the embedded container-runtime probe at the top of this file
-# aligns its continuation lines under the opening token, which is not a
-# multiple of indent_size. Indent width is already enforced per language
-# by shfmt, biome, rumdl, and yamllint; what ec adds is the charset,
-# line-ending, final-newline, and trailing-whitespace bar tree-wide.
+# Enforce .editorconfig across tracked files via editorconfig-checker.
+# With no file arguments it walks git's index, so the gitignored Vale
+# style packages never reach it; .editorconfig-checker.json mirrors the
+# prek `exclude:` scope anyway. Indent size is checked tree-wide; the one
+# span that cannot satisfy it, the container-runtime probe at the top of
+# this file, carries inline disable markers rather than a global opt-out.
 lint-editorconfig:
-    ec
+    editorconfig-checker
 
 # Preview the four commit-msg gates against the COMMIT_AGENTMSG draft.
 lint-commit-msg:

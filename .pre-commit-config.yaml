@@ -68,12 +68,15 @@ repos:
       # The bats suites are bash, but their `#!/usr/bin/env bats` shebang
       # names no dialect shellcheck knows, so they need --shell=bash. They
       # get their own hook rather than joining the one above: forcing the
-      # dialect on the *.sh scripts would override their own shebangs.
+      # dialect on the *.sh scripts would override their own shebangs. The
+      # recipe runs the SHA-pinned shellcheck image the CI gate uses, so a
+      # differently-versioned shellcheck on PATH cannot disagree with it.
       - id: shellcheck-bats
         name: shellcheck (bats)
-        entry: shellcheck --shell=bash
+        entry: just lint-shell-bats
         language: system
         files: \.bats$
+        pass_filenames: false
 
       - id: shfmt
         name: shfmt
@@ -88,23 +91,25 @@ repos:
         types: [toml]
         pass_filenames: false
 
-      # just's formatter takes no file arguments, so --justfile points it
-      # at the staged path prek appends. --check reports rather than
-      # rewrites; run `just format-just` to apply.
+      # `just format-just` is the in-place fixer; the recipe here only
+      # reports the diff it would apply.
       - id: just-fmt
         name: just --fmt --check
-        entry: just --fmt --check --unstable --justfile
+        entry: just lint-just
         language: system
         files: ^Justfile$
+        pass_filenames: false
 
-      # editorconfig-checker enforces .editorconfig itself: charset, line
-      # endings, final newline, and trailing whitespace. Scope and the
-      # indent-size opt-out live in .editorconfig-checker.json.
+      # Whole-tree run on every commit. editorconfig-checker walks the git
+      # index itself and finishes in well under a second, and its scope
+      # lives in .editorconfig-checker.json, so passing filenames here would
+      # only give the hook a second, drifting copy of that scope.
       - id: editorconfig-checker
         name: editorconfig-checker
-        entry: ec
+        entry: just lint-editorconfig
         language: system
         types: [text]
+        pass_filenames: false
 
       # Tree-wide spell check at pre-commit and pre-push. Scoped off the
       # commit-msg stage so the cspell-commit hook below owns the commit

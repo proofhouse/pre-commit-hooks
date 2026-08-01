@@ -1,6 +1,6 @@
 {
-  "Exclude": ["^\\.vale/(Google|write-good|proselint|ai-tells.*)/"],
-  "Disable": {
-    "IndentSize": true
-  }
+  "Exclude": [
+    "^\\.vale/(Google|write-good|proselint|ai-tells.*)/",
+    "^CHANGELOG\\.md$"
+  ]
 }
