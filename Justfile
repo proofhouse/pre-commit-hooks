@@ -170,7 +170,7 @@ lint-workflows:
 
 # Lint Markdown prose via vale.
 lint-prose *args:
-    vale --output=proofhouse-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,.claude/worktrees/*,apm_modules/*,COMMIT_AGENTMSG}' {{ if args == "" { "." } else { args } }}
+    vale --output=proofhouse-agent.tmpl --glob='!{LICENSE,CHANGELOG.md,.vale/*,tmp/*,.claude/worktrees/*,.claude/rules/*,.claude/skills/*,apm_modules/*,COMMIT_AGENTMSG}' {{ if args == "" { "." } else { args } }}
 
 # Spell-check the tree via cspell.
 lint-spelling *args:
