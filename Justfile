@@ -36,6 +36,15 @@ docker_run := 'DOCKER_CONFIG="$(mktemp -d)" PATH="$(dirname ' + container_runtim
 # Linters and the test runner run from digest-pinned Docker images, so
 # the only host tool the recipes assume on PATH is shfmt (from the
 # Brewfile). Renovate tracks each version + digest pair via the markers.
+# The tombi release this repo's config and committed formatting are
+# verified against. tombi is brew-installed, so `check-tombi-version`
+# compares the local binary with it: a mismatch means local formatting
+# may differ from what the gate expects.
+
+# renovate: datasource=github-releases depName=tombi-toml/tombi
+
+tombi_version := "1.2.5"
+
 # renovate: datasource=docker depName=rhysd/actionlint
 
 actionlint_version := "1.7.12"
@@ -162,6 +171,21 @@ lint-yaml *args:
 lint-toml:
     tombi format --check --diff
     tombi lint --offline --error-on-warnings
+
+# Warn when the locally installed tombi differs from the verified
+# release. Advisory rather than fatal: tombi comes from Homebrew and
+# moves on its own schedule, and that is fine so long as it stays
+# visible rather than silently reformatting a file the gate then
+# rejects.
+[script]
+check-tombi-version:
+    local=$(tombi --version | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+    if [[ "${local}" != "{{ tombi_version }}" ]]; then
+        echo "warning: local tombi ${local} != verified {{ tombi_version }}" >&2
+        echo "         formatting may differ from what the gate expects" >&2
+    else
+        echo "tombi ${local} matches the verified release"
+    fi
 
 # Preview the four commit-msg gates against the COMMIT_AGENTMSG draft.
 lint-commit-msg:
