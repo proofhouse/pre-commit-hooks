@@ -65,6 +65,16 @@ repos:
         language: system
         files: \.sh$
 
+      # The bats suites are bash, but their `#!/usr/bin/env bats` shebang
+      # names no dialect shellcheck knows, so they need --shell=bash. They
+      # get their own hook rather than joining the one above: forcing the
+      # dialect on the *.sh scripts would override their own shebangs.
+      - id: shellcheck-bats
+        name: shellcheck (bats)
+        entry: shellcheck --shell=bash
+        language: system
+        files: \.bats$
+
       - id: shfmt
         name: shfmt
         entry: shfmt -w

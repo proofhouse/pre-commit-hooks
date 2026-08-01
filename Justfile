@@ -123,11 +123,18 @@ fix-markdown *args:
 # conveniences as in the Go siblings.
 lint: lint-shell lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml
 
-# Lint every tracked *.sh via the pinned shellcheck image (skips *.bats).
+# Lint every tracked *.sh and *.bats via the pinned shellcheck image. The
+# suites under test/ are bash, but their `#!/usr/bin/env bats` shebang
+# names no dialect shellcheck knows, so they need an explicit
+# --shell=bash. Nothing else: bats' `@test "name" { ... }` blocks parse
+# as ordinary bash command groups, and `run`/`load` as ordinary commands,
+# so the suites need no suppressions.
 [script]
 lint-shell:
     files=$(git ls-files '*.sh')
     if [ -n "$files" ]; then {{ shellcheck }} $files; fi
+    bats_files=$(git ls-files '*.bats')
+    if [ -n "$bats_files" ]; then {{ shellcheck }} --shell=bash $bats_files; fi
 
 # Fail if shfmt would reformat any tracked *.sh (mirrors format-shell).
 [script]
