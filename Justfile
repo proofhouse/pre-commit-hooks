@@ -1,5 +1,5 @@
-set unstable := true
-set positional-arguments := true
+set unstable
+set positional-arguments
 
 # Run [script] recipes under bash; on Linux sh is dash, which lacks the
 # [[ ]], <<<, and pipefail constructs those recipes use.
@@ -110,8 +110,15 @@ format-config *args:
 format-toml:
     tombi format
 
+# Reformat this Justfile in place via just's own formatter. `--fmt` is
+# still gated behind --unstable; the `set unstable` at the top of this
+# file already lifts that gate, but the flag is spelled out so the recipe
+# does not depend on a setting a future edit could narrow.
+format-just:
+    just --fmt --unstable
+
 # Run every formatter over the tree.
-format: format-shell format-markdown format-config format-toml
+format: format-shell format-markdown format-config format-toml format-just
 
 # Apply rumdl's auto-fixable Markdown rules (complements format-markdown).
 fix-markdown *args:
@@ -121,7 +128,7 @@ fix-markdown *args:
 # shell hooks and the docs around them, so the prose, spelling, Markdown,
 # config, and YAML linters are code gates here rather than local-only
 # conveniences as in the Go siblings.
-lint: lint-shell lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml
+lint: lint-shell lint-shell-fmt lint-workflows lint-prose lint-spelling lint-markdown lint-config lint-yaml lint-just
 
 # Lint every tracked *.sh and *.bats via the pinned shellcheck image. The
 # suites under test/ are bash, but their `#!/usr/bin/env bats` shebang
@@ -196,6 +203,11 @@ check-tombi-version:
     else
         echo "tombi ${local} matches the verified release"
     fi
+
+# Fail if just's own formatter would rewrite this Justfile (mirrors
+# format-just). It prints a unified diff of what it would change.
+lint-just:
+    just --fmt --check --unstable
 
 # Preview the four commit-msg gates against the COMMIT_AGENTMSG draft.
 lint-commit-msg:

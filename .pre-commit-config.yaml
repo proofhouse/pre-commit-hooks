@@ -88,6 +88,15 @@ repos:
         types: [toml]
         pass_filenames: false
 
+      # just's formatter takes no file arguments, so --justfile points it
+      # at the staged path prek appends. --check reports rather than
+      # rewrites; run `just format-just` to apply.
+      - id: just-fmt
+        name: just --fmt --check
+        entry: just --fmt --check --unstable --justfile
+        language: system
+        files: ^Justfile$
+
       # Tree-wide spell check at pre-commit and pre-push. Scoped off the
       # commit-msg stage so the cspell-commit hook below owns the commit
       # buffer with worktree-safe config resolution.
