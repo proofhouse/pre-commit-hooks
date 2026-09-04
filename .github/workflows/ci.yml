@@ -28,7 +28,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Harden the runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: audit
 
@@ -52,7 +52,7 @@ jobs:
       # serves that day. It lands on PATH ahead of Homebrew's prefix, so
       # the Brewfile copy never shadows it.
       - name: Set up vale
-        uses: proofhouse/github-actions/.github/actions/setup-vale@e95a868f30a34989191902e274e131474f06429f # v0.3.0
+        uses: proofhouse/github-actions/.github/actions/setup-vale@131c527df05799916f98d8c4b26eb225dbfc7845 # v0.4.0
 
       # The image pins an older Homebrew and sets HOMEBREW_NO_AUTO_UPDATE,
       # but `brew bundle` reads formula metadata from the JSON API, which
@@ -76,7 +76,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - name: Harden the runner
-        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        uses: step-security/harden-runner@e14015d583714f6e62063499dc959a02595150a1 # v2.21.1
         with:
           egress-policy: audit
 
