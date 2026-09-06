@@ -14,7 +14,7 @@ inputs:
   shfmt-version:
     description: shfmt version to install (defaults to the project-wide pinned release).
     required: false
-    default: 'v3.13.1'  # renovate: datasource=github-releases depName=mvdan/sh
+    default: 'v3.14.0'  # renovate: datasource=github-releases depName=mvdan/sh
 
 runs:
   using: composite
